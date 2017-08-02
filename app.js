@@ -8,11 +8,34 @@ const jwt = require('koa-jwt');
 const path = require('path');
 const serve = require('koa-static');
 const historyApiFallback = require('koa2-history-api-fallback');
+const views = require('koa-views')
+const static = require('koa-static')
+const session=require('koa-session');
 const app = new Koa()
 app.use(koa_bodyparser())
 app.use(json())
 app.use(logger())
 app.use(cors())
+app.use(views(path.join(__dirname, './server/view'), {
+  extension: 'ejs'
+}))
+// 静态资源目录对于相对入口文件index.js的路径
+const staticPath = './server/static'
+
+app.use(static(
+  path.join( __dirname,  staticPath)
+))
+
+app.keys = ['sahuirhwe7r8235235bgh235iu235'];//我理解为一个加密的钥匙，类似一个token
+
+app.use(session({
+  key: 'koa:sess', /** cookie的名称，可以不管 */
+  maxAge: 7200000, /** (number) maxAge in ms (default is 1 days)，cookie的过期时间，这里表示2个小时 */
+  overwrite: true, /** (boolean) can overwrite or not (default true) */
+  httpOnly: true, /** (boolean) httpOnly or not (default true) */
+  signed: true, /** (boolean) signed or not (default true) */
+},app));
+
 const router = koa_router();
 
 
@@ -39,6 +62,8 @@ const home = require('./server/routes/home.js')
 router.use('/', home.routes())
 const api = require('./server/routes/api.js')
 router.use('/api',jwt({secret: 'vue-koa-demo'}), api.routes())
+const member = require('./server/routes/member.js')
+router.use('/member', member.routes())
 
 app.use(async function(ctx, next){  //  如果JWT验证失败，返回验证失败信息
   try {

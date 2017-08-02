@@ -54,5 +54,34 @@ module.exports = {
             info: '用户不存在'
         }
     }
+},
+async getLogin( ctx ){
+  let errorMessage = ''
+  await ctx.render('member/login', {errorMessage})
+},
+  async postLogin(ctx){
+    const data = ctx.request.body;
+    const userInfo = await user.getUserByName(data.name);
+    let errorMessage = ''
+
+    if(userInfo != null){
+        //if(userInfo.password !=data.password){
+        if(!bcrypt.compareSync(data.password, userInfo.password)){
+            errorMessage = '密码错误！'
+            await ctx.render('member/login', {errorMessage})
+        }else{
+            const userToken = {
+                name: userInfo.user_name,
+                id: userInfo.id
+            }
+            const secret = 'koa-XXOO3399';
+            const token = jwt.sign(userToken,secret);
+            ctx.session.token = token;
+            await ctx.redirect('/home');
+        }
+    }else{
+        errorMessage = '用户不存在！'
+        await ctx.render('member/login', {errorMessage})
+    }
 }
 }
